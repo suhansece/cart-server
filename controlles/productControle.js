@@ -17,11 +17,11 @@ const addProduct = async (req, res) => {
 };
 
 const setQuantity = async (req, res) => {
-  const {quantity } = req.body||0;
-  const {id}= req.params;
-  if(!mongoose.Types.ObjectId.isValid(id)){
-    res.status(404).json({error:"Invalid product"})
-}
+  const { quantity } = req.body || 0;
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    res.status(404).json({ error: "Invalid product" });
+  }
   try {
     const product = await prodectsModels.findByIdAndUpdate(id, {
       quantity: quantity,
@@ -30,20 +30,41 @@ const setQuantity = async (req, res) => {
   } catch (e) {
     res.status(400).json({ erroe: e.message });
   }
-
+  
 };
 
-const deleteProduct = async(req,res)=>{
-    const {id}= req.params;
-  if(!mongoose.Types.ObjectId.isValid(id)){
-    res.status(404).json({error:"Invalid product"})
-}
+const deleteProduct = async (req, res) => {
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    res.status(404).json({ error: "Invalid product" });
+  }
   try {
-    const product = await prodectsModels.findByIdAndDelete(id)
+    const product = await prodectsModels.findByIdAndDelete(id);
     res.status(200).json(product);
   } catch (e) {
     res.status(400).json({ erroe: e.message });
   }
-}
+};
 
-module.exports = { addProduct,setQuantity,deleteProduct};
+const updatePrice = async (req, res) => {
+  const { price } = req.body;
+  const { id } = req.params;
+
+  try {
+    const product = await prodectsModels.findByIdAndUpdate(
+      id,
+      { price },
+      { new: true }
+    );
+
+    if (!product) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+
+    res.status(200).json(product);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+};
+
+module.exports = { addProduct, setQuantity, deleteProduct, updatePrice };
