@@ -67,4 +67,13 @@ const updatePrice = async (req, res) => {
   }
 };
 
-module.exports = { addProduct, setQuantity, deleteProduct, updatePrice };
+const productsList=async(req,res)=>{
+      try{
+        const products = await prodectsModels.find();
+        res.status(200).json(products);
+      }catch (e) {
+        res.status(500).json({ error: e.message });
+      }
+}
+
+module.exports = { addProduct, setQuantity, deleteProduct, updatePrice ,productsList};
