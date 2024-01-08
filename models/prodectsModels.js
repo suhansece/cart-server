@@ -20,6 +20,15 @@ const prodectSchema = new Schema(
       type: Number,
       default:0
     },
+    type:{
+      type : String,
+      require:true,
+      default:"Non-Veg"
+    },
+    details:{
+      type:String,
+      default:""
+    }
   },
   {
     timestamps: true,

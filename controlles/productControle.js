@@ -2,12 +2,14 @@ const { default: mongoose } = require("mongoose");
 const prodectsModels = require("../models/prodectsModels");
 
 const addProduct = async (req, res) => {
-  const { name, category, price } = req.body;
+  const { name, category, price,type,details} = req.body;
   try {
     const product = await prodectsModels.create({
       name,
       category,
       price,
+      type,
+      details,
       quantity: 0,
     });
     res.status(200).json(product);
@@ -75,5 +77,30 @@ const productsList=async(req,res)=>{
         res.status(500).json({ error: e.message });
       }
 }
+const product = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const product = await prodectsModels.findById(id);
+    if (product) {
+      res.status(200).json(product);
+    } else {
+      res.status(400).json({ error: "Product Not Found" });
+    }
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+}
+const categoryProductList = async(req,res)=>{
+  const {category}=req.params;
+  try {
+    const product = await prodectsModels.find({category:category});
+      res.status(200).json(product);
 
-module.exports = { addProduct, setQuantity, deleteProduct, updatePrice ,productsList};
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+}
+
+
+module.exports = { addProduct, setQuantity, deleteProduct, updatePrice ,productsList,product,categoryProductList};
+
