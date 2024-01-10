@@ -8,36 +8,34 @@ const { default: mongoose } = require("mongoose");
 const createUser = asyncHandler(async (req, res) => {
   const { name, username, email, password } = req.body;
   if (!name || !username || !password || !email) {
-    res.status(400);
-    throw new Error("Please add all fields");
+    res.status(400).json({ message: "Enter all Fields" });
   }
   const emailExist = await userModels.findOne({ email });
-  if (emailExist) {
-    res.status(400);
-    throw new Error("Email Already exist");
-  }
   const usernameExist = await userModels.findOne({ username });
-  if (usernameExist) {
-    res.status(400);
-    throw new Error("Username Already exist");
-  }
-  try {
-    const salt = await bcrypt.genSalt(10);
-    const hashedpassword = await bcrypt.hash(password, salt);
-    const user = await userModels.create({
-      name,
-      username,
-      email,
-      password: hashedpassword,
-    });
-    res.cookie("token", generateJWT(user._id));
-    res.status(200).json({
-      _id: user._id,
-      username: user.username,
-      email: user.email,
-    });
-  } catch (e) {
-    res.status(400).json({ erroe: e.message });
+  if (emailExist) {
+    res.status(400).json({ message: "Email Already exist" });
+  } else if (usernameExist) {
+    res.status(400).json({ message: "Username Already exist" });
+  } else {
+    try {
+      const salt = await bcrypt.genSalt(10);
+      const hashedpassword = await bcrypt.hash(password, salt);
+      const user = await userModels.create({
+        name,
+        username,
+        email,
+        password: hashedpassword,
+        history:[]
+      });
+      res.cookie("token", generateJWT(user._id));
+      res.status(200).json({
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+      });
+    } catch (e) {
+      res.status(400).json({ erroe: e.message });
+    }
   }
 });
 
@@ -145,15 +143,15 @@ const deleteFromCart = async (req, res) => {
 
 const addNoOfItems = async (req, res) => {
   const { id } = req.params;
-  const {noOfItems} = req.body;
+  const { noOfItems } = req.body;
   try {
-     await userModels.updateOne(
+    await userModels.updateOne(
       { _id: req.user.id, "cart._id": id },
       {
         $set: { "cart.$.noOfItems": noOfItems },
       }
     );
-    res.status(200).json({Status:"success"});
+    res.status(200).json({ Status: "success" });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -161,24 +159,43 @@ const addNoOfItems = async (req, res) => {
 
 const buy = async (req, res) => {
   const { id } = req.user;
+  const bill = { id: "", items: [], total: 0, name: "", date: "" ,billNo:354};
+  var currentdate = new Date();
+
   try {
     const user = await userModels.findById(id);
     const cartitems = user.cart;
+    bill.name = user.username;
+    bill.id = user._id;
+
     var total = 0;
     for (const item of cartitems) {
       const itemcost = await prodectsModels.findById(item.cartitems);
       total += itemcost.price * item.noOfItems;
+      bill.items.push({
+        name: itemcost.name,
+        price: itemcost.price,
+        noOfItems: item.noOfItems,
+        id: itemcost._id,
+      });
     }
     if (total <= user.balance) {
-      await userModels.updateOne(req.user, { balance: user.balance - total });
+      await userModels.updateOne({_id:req.user.id}, { balance: user.balance - total });
+      bill.total = total;
+      bill.date = currentdate;
       await userModels.updateOne(
         { _id: id },
         {
           $set: {
             cart: [],
           },
+          $push:{
+            history:bill
+          }
+          
         }
       );
+    
       for (const item of cartitems) {
         const itemcost = await prodectsModels.findByIdAndUpdate(
           item.cartitems,
@@ -187,7 +204,7 @@ const buy = async (req, res) => {
           }
         );
       }
-      res.status(200).json({ Status: "Success" });
+      res.status(200).json({ Status: "Success", data: bill });
     } else {
       res.status(400).json({ message: "Invalid Balance" });
     }

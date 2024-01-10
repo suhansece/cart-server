@@ -28,6 +28,8 @@ const prodectSchema = new Schema(
     details:{
       type:String,
       default:""
+    },image:{
+      type:String
     }
   },
   {

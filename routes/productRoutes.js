@@ -7,8 +7,8 @@ const router = express.Router();
 router.get('/',productsList);
 router.get('/:id',product);
 router.get('/category/:category',categoryProductList);
-router.post('/add',adminProtect,addProduct)
-router.put('/setquantity/:id',adminProtect,setQuantity)
-router.put('/updateprice/:id',adminProtect,updatePrice)
-router.delete('/delete/:id',adminProtect,deleteProduct)
+router.post('/add',addProduct)
+router.put('/setquantity/:id',setQuantity)
+router.put('/updateprice/:id',updatePrice)
+router.delete('/delete/:id',deleteProduct)
 module.exports=router;

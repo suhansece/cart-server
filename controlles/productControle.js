@@ -2,7 +2,7 @@ const { default: mongoose } = require("mongoose");
 const prodectsModels = require("../models/prodectsModels");
 
 const addProduct = async (req, res) => {
-  const { name, category, price,type,details} = req.body;
+  const { name, category, price,type,details,image} = req.body;
   try {
     const product = await prodectsModels.create({
       name,
@@ -11,6 +11,7 @@ const addProduct = async (req, res) => {
       type,
       details,
       quantity: 0,
+      image,
     });
     res.status(200).json(product);
   } catch (e) {

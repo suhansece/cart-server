@@ -34,8 +34,43 @@ const userschema = new Schema(
         default:1
       }
     }
-
+    ],
+    history:[
+      {
+        id:{
+          type:String
+        },
+        total:{
+          type:Number
+        },
+        name:{
+          type:String
+        },
+        date:{
+          type:String
+        },
+        billNo:{
+          type:Number
+        },
+        items:[
+          {
+            name:{
+              type:String
+            },
+            price:{
+              type:Number
+            },
+            noOfItems:{
+              type:Number
+            },
+            id:{
+              type:String
+            }
+          }
+        ]
+      }
     ]
+
   },
   {
     timestamps: true,
