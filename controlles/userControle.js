@@ -10,11 +10,9 @@ const createUser = asyncHandler(async (req, res) => {
   if (!name || !username || !password || !email) {
     res.status(400).json({ message: "Enter all Fields" });
   }
-  const emailExist = await userModels.findOne({ email });
-  const usernameExist = await userModels.findOne({ username });
-  if (emailExist) {
+  if (await userModels.findOne({ email })) {
     res.status(400).json({ message: "Email Already exist" });
-  } else if (usernameExist) {
+  } else if (await userModels.findOne({ username })) {
     res.status(400).json({ message: "Username Already exist" });
   } else {
     try {
@@ -61,7 +59,7 @@ const loginUser = async (req, res) => {
 
 const generateJWT = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRETKET, {
-    expiresIn: "1d",
+    expiresIn: "1m",
   });
 };
 
@@ -145,14 +143,18 @@ const addNoOfItems = async (req, res) => {
   const { id } = req.params;
   const { noOfItems } = req.body;
   try {
+    
     await userModels.updateOne(
       { _id: req.user.id, "cart._id": id },
       {
         $set: { "cart.$.noOfItems": noOfItems },
       }
     );
+    
     res.status(200).json({ Status: "success" });
+    
   } catch (e) {
+    console.log(e)
     res.status(500).json({ error: e.message });
   }
 };
@@ -167,10 +169,12 @@ const buy = async (req, res) => {
     const cartitems = user.cart;
     bill.name = user.username;
     bill.id = user._id;
-
+    let outOfStock;
     var total = 0;
     for (const item of cartitems) {
       const itemcost = await prodectsModels.findById(item.cartitems);
+      if((item.noOfItems<=itemcost.quantity)){
+      console.log(itemcost)
       total += itemcost.price * item.noOfItems;
       bill.items.push({
         name: itemcost.name,
@@ -178,8 +182,16 @@ const buy = async (req, res) => {
         noOfItems: item.noOfItems,
         id: itemcost._id,
       });
+    }else{
+      outOfStock=itemcost.name;
+      console.log(outOfStock)
+      break;
     }
-    if (total <= user.balance) {
+    }
+    if(outOfStock){
+      res.status(400).json({ message: `${outOfStock} out of stock` });
+    }
+    else if (total <= user.balance) {
       await userModels.updateOne({_id:req.user.id}, { balance: user.balance - total });
       bill.total = total;
       bill.date = currentdate;

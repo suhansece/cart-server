@@ -17,7 +17,7 @@ const adminRoutes = require("./routes/adminRoutes");
 // Database Connection
 
 mongoose
-  .connect(`${process.env.DB}/${process.env.DB_NAME}`, {
+  .connect(`${process.env.DB}`, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })

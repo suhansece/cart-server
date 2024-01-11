@@ -41,14 +41,17 @@ const createAdmin = asyncHandler(async (req, res) => {
 });
 
 const loginAdmin = async (req, res) => {
+
   const { username, password } = req.body;
   if (!username || !password) {
     res.status(400);
     throw new Error("Please add all fields");
   }
+  try{
   const user = await adminModels.findOne({ username });
-
-  if (user && (await bcrypt.compare(password, user.password))) {
+  const pass=await bcrypt.compare(password, user.password)
+  console.log(user)
+  if (user && pass) {
     res.cookie("token", generateJWT(user._id));
     res.status(200).json({
       _id: user.id,
@@ -57,6 +60,9 @@ const loginAdmin = async (req, res) => {
   } else {
     res.status(400).json({ message: "Invalid userdetails" });
   }
+}catch(e){
+  console.log(e);
+}
 };
 
 const generateJWT = (id) => {
