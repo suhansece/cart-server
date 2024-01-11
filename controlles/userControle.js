@@ -59,13 +59,23 @@ const loginUser = async (req, res) => {
 
 const generateJWT = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRETKET, {
-    expiresIn: "1m",
+    expiresIn: "5m",
   });
 };
 
 const userDetails = async (req, res) => {
   try {
     const user = await userModels.findById(req.user.id);
+    user.password = "";
+    res.status(200).json(user);
+  } catch (e) {
+    res.status(400).json({ erroe: e.message });
+  }
+};
+const userDetailsAdmin = async (req, res) => {
+  const {username} =req.params;
+  try {
+    const user = await userModels.findOne({username:username});
     user.password = "";
     res.status(200).json(user);
   } catch (e) {
@@ -174,7 +184,6 @@ const buy = async (req, res) => {
     for (const item of cartitems) {
       const itemcost = await prodectsModels.findById(item.cartitems);
       if((item.noOfItems<=itemcost.quantity)){
-      console.log(itemcost)
       total += itemcost.price * item.noOfItems;
       bill.items.push({
         name: itemcost.name,
@@ -184,7 +193,6 @@ const buy = async (req, res) => {
       });
     }else{
       outOfStock=itemcost.name;
-      console.log(outOfStock)
       break;
     }
     }
@@ -233,4 +241,5 @@ module.exports = {
   deleteFromCart,
   buy,
   addNoOfItems,
+  userDetailsAdmin,
 };

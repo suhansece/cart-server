@@ -3,9 +3,10 @@ const asyncHandler = require("express-async-handler");
 const jwt = require("jsonwebtoken");
 const { default: mongoose } = require("mongoose");
 const adminModels = require("../models/adminModels");
+const userModels = require("../models/userModels");
 
 const createAdmin = asyncHandler(async (req, res) => {
-  const {username, email, password } = req.body;
+  const { username, email, password } = req.body;
   if (!username || !password || !email) {
     res.status(400);
     throw new Error("Please add all fields");
@@ -27,7 +28,7 @@ const createAdmin = asyncHandler(async (req, res) => {
       username,
       email,
       password: hashedpassword,
-      type:'admin'
+      type: "admin",
     });
     res.cookie("token", generateJWT(user._id));
     res.status(200).json({
@@ -41,34 +42,54 @@ const createAdmin = asyncHandler(async (req, res) => {
 });
 
 const loginAdmin = async (req, res) => {
-
   const { username, password } = req.body;
   if (!username || !password) {
     res.status(400);
     throw new Error("Please add all fields");
   }
-  try{
-  const user = await adminModels.findOne({ username });
-  const pass=await bcrypt.compare(password, user.password)
-  console.log(user)
-  if (user && pass) {
-    res.cookie("token", generateJWT(user._id));
-    res.status(200).json({
-      _id: user.id,
-      email: user.email,
-    });
-  } else {
-    res.status(400).json({ message: "Invalid userdetails" });
+  try {
+    const user = await adminModels.findOne({ username });
+    const pass = await bcrypt.compare(password, user.password);
+    if (user && pass) {
+      res.cookie("token", generateJWT(user._id));
+      res.status(200).json({
+        _id: user.id,
+        email: user.email,
+      });
+    } else {
+      res.status(400).json({ message: "Invalid userdetails" });
+    }
+  } catch (e) {
+    console.log(e);
   }
-}catch(e){
-  console.log(e);
-}
+};
+const addBalance = async (req, res) => {
+  const { username } = req.params;
+  const { amount } = req.body;
+  try {
+    const user = await userModels.findOne({ username: username });
+    if (user) {
+      const t=user.balance+ amount
+     
+      await userModels.updateOne(
+        { username: username },
+        {
+          balance: t
+        }
+      );
+      res.status(200).json({ message: "Amount Added" });
+    } else {
+      res.status(400).json({ message: "user not exist" });
+    }
+  } catch (e) {
+    res.status(500).json({ erroe: e.message });
+  }
 };
 
 const generateJWT = (id) => {
-    return jwt.sign({ id }, process.env.JWT_SECRETKET, {
-      expiresIn: "5h",
-    });
-  };
+  return jwt.sign({ id }, process.env.JWT_SECRETKET, {
+    expiresIn: "5h",
+  });
+};
 
-module.exports={loginAdmin,createAdmin}
+module.exports = { loginAdmin, createAdmin, addBalance };
