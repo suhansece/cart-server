@@ -35,7 +35,7 @@ const adminProtect = asyncHandler(async (req, res, next) => {
        
       }else{
         res.status(401);
-        throw new Error("not authorized");
+        throw new Error("not authorizedd");
       }
       next();
     } catch (error) {

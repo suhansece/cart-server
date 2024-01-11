@@ -67,7 +67,7 @@ const loginAdmin = async (req, res) => {
 
 const generateJWT = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRETKET, {
-      expiresIn: "1d",
+      expiresIn: "5h",
     });
   };
 
