@@ -11,7 +11,7 @@ router.put('/addtocart',protect,addtoCart);
 router.put('/deletefromcart/:id',protect,deleteFromCart);
 router.put('/addnoofitems/:id',protect,addNoOfItems);
 router.get('/',protect,userDetails);
-router.get('/:username',userDetailsAdmin);
-router.put('/addbalance/:username',addBalance);
+router.get('/:username',adminProtect,userDetailsAdmin);
+router.put('/addbalance/:username',adminProtect,addBalance);
 
 module.exports=router;

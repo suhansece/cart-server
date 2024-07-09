@@ -4,6 +4,7 @@ const asyncHandler = require("express-async-handler");
 const jwt = require("jsonwebtoken");
 const prodectsModels = require("../models/prodectsModels");
 const { default: mongoose } = require("mongoose");
+const store = require("../models/store");
 
 const createUser = asyncHandler(async (req, res) => {
   const { name, username, email, password } = req.body;
@@ -23,13 +24,16 @@ const createUser = asyncHandler(async (req, res) => {
         username,
         email,
         password: hashedpassword,
-        history:[]
+        history: [],
       });
-      res.cookie("token", generateJWT(user._id));
+      const token = generateJWT(user._id)
+      res.cookie("token", token);
+
       res.status(200).json({
         _id: user._id,
         username: user.username,
         email: user.email,
+        token: token
       });
     } catch (e) {
       res.status(400).json({ erroe: e.message });
@@ -46,11 +50,13 @@ const loginUser = async (req, res) => {
   const user = await userModels.findOne({ username });
 
   if (user && (await bcrypt.compare(password, user.password))) {
-    res.cookie("token", generateJWT(user._id));
+    const token = generateJWT(user._id)
+    res.cookie("token", token);
     res.status(200).json({
       _id: user.id,
       name: user.name,
       email: user.email,
+      token:token
     });
   } else {
     res.status(400).json({ message: "Invalid userdetails" });
@@ -73,9 +79,9 @@ const userDetails = async (req, res) => {
   }
 };
 const userDetailsAdmin = async (req, res) => {
-  const {username} =req.params;
+  const { username } = req.params;
   try {
-    const user = await userModels.findOne({username:username});
+    const user = await userModels.findOne({ username: username });
     user.password = "";
     res.status(200).json(user);
   } catch (e) {
@@ -153,25 +159,23 @@ const addNoOfItems = async (req, res) => {
   const { id } = req.params;
   const { noOfItems } = req.body;
   try {
-    
     await userModels.updateOne(
       { _id: req.user.id, "cart._id": id },
       {
         $set: { "cart.$.noOfItems": noOfItems },
       }
     );
-    
+
     res.status(200).json({ Status: "success" });
-    
   } catch (e) {
-    console.log(e)
+    console.log(e);
     res.status(500).json({ error: e.message });
   }
 };
 
 const buy = async (req, res) => {
   const { id } = req.user;
-  const bill = { id: "", items: [], total: 0, name: "", date: "" ,billNo:354};
+  const bill = { id: "", items: [], total: 0, name: "", date: "", billNo: 0 };
   var currentdate = new Date();
 
   try {
@@ -183,46 +187,68 @@ const buy = async (req, res) => {
     var total = 0;
     for (const item of cartitems) {
       const itemcost = await prodectsModels.findById(item.cartitems);
-      if((item.noOfItems<=itemcost.quantity)){
-      total += itemcost.price * item.noOfItems;
-      bill.items.push({
-        name: itemcost.name,
-        price: itemcost.price,
-        noOfItems: item.noOfItems,
-        id: itemcost._id,
-      });
-    }else{
-      outOfStock=itemcost.name;
-      break;
+      if (item.noOfItems <= itemcost.quantity) {
+        total += itemcost.price * item.noOfItems;
+        bill.items.push({
+          name: itemcost.name,
+          price: itemcost.price,
+          noOfItems: item.noOfItems,
+          id: itemcost._id,
+        });
+      } else {
+        outOfStock = itemcost.name;
+        break;
+      }
     }
-    }
-    if(outOfStock){
+    if (outOfStock) {
       res.status(400).json({ message: `${outOfStock} out of stock` });
-    }
-    else if (total <= user.balance) {
-      await userModels.updateOne({_id:req.user.id}, { balance: user.balance - total });
+    } else if (total <= user.balance) {
+      await userModels.updateOne(
+        { _id: req.user.id },
+        { balance: user.balance - total }
+      );
       bill.total = total;
       bill.date = currentdate;
+      
+      let billNo;
+      try {
+         billNo = await store.findById("65abb362a0f70c636b1db7e5");
+        bill.billNo = billNo.billNo + 1;
+      } catch (e) {
+        res.status(400).json({ message: e });
+      }
+
+      try {
+        await store.findByIdAndUpdate(billNo._id, {
+          billNo: billNo.billNo + 1,
+        });
+        await store.updateOne(
+          { _id:"65abb362a0f70c636b1db7e5"},
+          {
+            $push: {
+              history: bill,
+            },
+          }
+        );
+      } catch (e) {
+        res.status(400).json({ message: e });
+      }
       await userModels.updateOne(
         { _id: id },
         {
           $set: {
             cart: [],
           },
-          $push:{
-            history:bill
-          }
-          
+          $push: {
+            history: bill,
+          },
         }
       );
-    
+
       for (const item of cartitems) {
-        const itemcost = await prodectsModels.findByIdAndUpdate(
-          item.cartitems,
-          {
-            $inc: { quantity: -item.noOfItems },
-          }
-        );
+        await prodectsModels.findByIdAndUpdate(item.cartitems, {
+          $inc: { quantity: -item.noOfItems },
+        });
       }
       res.status(200).json({ Status: "Success", data: bill });
     } else {

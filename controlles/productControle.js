@@ -72,7 +72,7 @@ const updatePrice = async (req, res) => {
 
 const productsList=async(req,res)=>{
       try{
-        const products = await prodectsModels.find();
+        const products = await prodectsModels.find().sort({ createdAt: -1 });
         res.status(200).json(products);
       }catch (e) {
         res.status(500).json({ error: e.message });

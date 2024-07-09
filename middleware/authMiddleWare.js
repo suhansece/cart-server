@@ -4,7 +4,12 @@ const User = require('../models/userModels');
 const adminModels = require("../models/adminModels");
 
 const protect = asyncHandler(async (req, res, next) => {
-  const { token } = req.cookies;
+  let  token  = req.headers.authorization;
+  
+  if(!token){
+    token = req.cookies.token;
+  }
+  
   if (token) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRETKET);
@@ -29,7 +34,6 @@ const adminProtect = asyncHandler(async (req, res, next) => {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRETKET);
       const admin=await adminModels.findById(decoded.id);
-      console.log(admin)
       if(admin.type=='admin'){
         req.user = await adminModels.findById(decoded.id).select("-password");
        
